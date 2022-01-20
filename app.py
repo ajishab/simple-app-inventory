@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
 
+from sqlalchemy import true
+
 app = Flask(__name__)
 
 if __name__ == '__main__':
@@ -13,14 +15,15 @@ db = SQLAlchemy(app)
 class App(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   appname = db.Column(db.String(80), nullable=False)
-  region = db.Column(db.String(4), nullable=False)
-  risk = db.Column(db.String(4), nullable=False)
-  pii = db.Column(db.boolean)
-  pci = db.Column(db.boolean)
-  sox = db.Column(db.boolean)
+  region = db.Column(db.String(6), nullable=False)
+  risk = db.Column(db.String(6), nullable=False)
+  pii = db.Column(db.Boolean)
+  pci = db.Column(db.Boolean)
+  sox = db.Column(db.Boolean)
   
 
-  def __init__(self, appname, region, risk, pii, pci, sox):
+  def __init__(self, id, appname, region, risk, pii, pci, sox):
+    self.id = id
     self.appname = appname
     self.region = region
     self.risk = risk
@@ -30,23 +33,42 @@ class App(db.Model):
 
 db.create_all()
 
+@app.before_first_request
+def add_sample_data():
+  db.session.add(App(101, "Core Banking", "GLOBAL", "High", True, False, True ))
+  db.session.add(App(102, "Marketing DB", "GLOBAL", "Medium", True, False, False ))
+  db.session.add(App(103, "EMEA Printer Manager", "EMEA", "Low", False, False, False ))
+  db.session.add(App(104, "Europe Payment Network", "EMEA", "High", True, True, False ))
+  db.session.add(App(105, "Asia Payment Network", "APAC", "High", True, True, False ))
+  db.session.add(App(106, "US Merchant Connect", "AMER", "Medium", False, True, False ))
+  db.session.add(App(107, "Accounting Journal", "GLOBAL", "Medium", False, False, True ))
+  db.session.commit
+
 @app.route('/apps/<id>', methods=['GET'])
 def get_item(id):
-  app = App.query.get(id)
-  del app.__dict__['_sa_instance_state']
-  return jsonify(app.__dict__)
+  apprecord = App.query.get(id)
+  del apprecord.__dict__['_sa_instance_state']
+  return jsonify(apprecord.__dict__)
 
 @app.route('/apps', methods=['GET'])
 def get_items():
-  items = []
-  for item in db.session.query(Item).all():
-    del item.__dict__['_sa_instance_state']
-    items.append(item.__dict__)
-  return jsonify(items)
+  apprecords = []
+  for apprecord in db.session.query(App).all():
+    del apprecord.__dict__['_sa_instance_state']
+    apprecords.append(apprecord.__dict__)
+  return jsonify(apprecords)
 
 @app.route('/apps', methods=['POST'])
 def create_item():
   body = request.get_json()
-  db.session.add(Item(body['title'], body['content']))
+  db.session.add(App(body['id'], body['appname'], body['region'], body['risk'], body['pii'], body['pci'], body['sox']))
   db.session.commit()
-  return "item created"
+  return "app record created"
+
+@app.route('/apps/<id>', methods=['PUT'])
+def update_item(id):
+  body = request.get_json()
+  db.session.query(App).filter_by(id=id).update(
+    dict(appname=body['appname'], region=body['region'], risk=body['risk'], pii=body['pii'], pci=body['pci'], sox=body['sox']))
+  db.session.commit()
+  return "item updated"

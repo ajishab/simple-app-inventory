@@ -3,7 +3,7 @@ Example App Inventory For Testing
 
 The creates a basic Flask/Postgre SQL based application inventory database service with CRUD REST API and a Swagger-UI.
 
-To run:
+**To run:
 
 docker-compose up simpleappinventory
 

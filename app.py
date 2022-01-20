@@ -1,8 +1,7 @@
-from flask import Flask, request, jsonify
+from operator import add
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 import os
-
-from sqlalchemy import true
 
 app = Flask(__name__)
 
@@ -42,9 +41,9 @@ def add_sample_data():
   db.session.add(App(105, "Asia Payment Network", "APAC", "High", True, True, False ))
   db.session.add(App(106, "US Merchant Connect", "AMER", "Medium", False, True, False ))
   db.session.add(App(107, "Accounting Journal", "GLOBAL", "Medium", False, False, True ))
-  db.session.commit
+  db.session.commit()
 
-@app.route('/apps/<id>', methods=['GET'])
+@app.route('/apps/<appid>', methods=['GET'])
 def get_item(id):
   apprecord = App.query.get(id)
   del apprecord.__dict__['_sa_instance_state']
@@ -65,10 +64,31 @@ def create_item():
   db.session.commit()
   return "app record created"
 
-@app.route('/apps/<id>', methods=['PUT'])
-def update_item(id):
+@app.route('/apps/<appid>', methods=['PUT'])
+def update_item(appid):
   body = request.get_json()
-  db.session.query(App).filter_by(id=id).update(
+  db.session.query(App).filter_by(id=appid).update(
     dict(appname=body['appname'], region=body['region'], risk=body['risk'], pii=body['pii'], pci=body['pci'], sox=body['sox']))
   db.session.commit()
   return "item updated"
+
+@app.route('/apps/<appid>', methods=['DELETE'])
+def delete_item(appid):
+  body = request.get_json()
+  db.session.query(App).filter_by(id=appid).delete()
+  db.session.commit()
+  return "response deleted"
+
+@app.route('/reset', methods=['GET'])
+def reset_db():
+  body = request.get_json()
+  db.session.query(App).delete()
+  db.session.commit()
+  add_sample_data()
+  return "database reset"
+
+
+@app.route('/ui')
+def get_api():
+  print('sending docs')
+  return render_template('swaggerui.html')

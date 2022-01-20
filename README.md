@@ -1,7 +1,7 @@
 # simple-app-inventory
 Example App Inventory For Testing
 
-The creates a basic Flask/Postgre SQL based application inventory database service with CRUD REST API and a Swagger-UI.
+The creates a basic Flask/PostgreSQL based application inventory database service with CRUD REST API and a Swagger-UI.
 
 **To run:**
 
